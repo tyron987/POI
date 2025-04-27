@@ -3,8 +3,8 @@ import pyransac3d as pyrsc
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# Funkcja do skalowania osi 3D tak aby chmury wyglądały naturalnie
 def set_axes_equal(ax):
+    """Funkcja do automatycznego skalowania osi 3D tak aby chmury wyglądały naturalnie (proporcje)"""
     # Aktualne granice osi w przestrzeni 3D
     x_limits = ax.get_xlim3d()
     y_limits = ax.get_ylim3d()
@@ -35,7 +35,8 @@ points = data.to_numpy()
 plane = pyrsc.Plane()
 
 # Dopasowanie płaszczyzny algorytmem RANSAC
-# Inliers - punkty należące do dopasowanej płaszczyzny
+# best_eq - dopasowane współczynniki płaszczyzny
+# best_inliers - punkty należące do dopasowanej płaszczyzny
 best_eq, best_inliers_idx = plane.fit(points, 0.01)
 
 # Ekstrakcja współrzędnych punktów inliers z oryginalnej chmury punktów.
@@ -73,9 +74,26 @@ fig = plt.figure(figsize=(10, 8))
 ax = fig.add_subplot(111, projection='3d')
 ax.scatter(points[:, 0], points[:, 1], points[:, 2], color='gray', alpha=0.3, label='Wszystkie punkty')
 ax.scatter(best_inliers[:, 0], best_inliers[:, 1], best_inliers[:, 2], color='green', label='Dopasowane punkty')
-xx, yy = np.meshgrid(np.linspace(np.min(points[:,0]), np.max(points[:,0]), 10),
-                     np.linspace(np.min(points[:,1]), np.max(points[:,1]), 10))
-zz = (-a * xx - b * yy - d) / c
+lim = [np.min(points, axis=0), np.max(points, axis=0)]
+
+grid_size = 10
+# Automatyczne dostosowanie rysowania płaszczyzny
+if abs(c) > abs(a) and abs(c) > abs(b):
+    # Normalne - rysujemy Z jako funkcję X i Y
+    xx, yy = np.meshgrid(np.linspace(lim[0][0], lim[1][0], grid_size),
+                         np.linspace(lim[0][1], lim[1][1], grid_size))
+    zz = (-a * xx - b * yy - d) / c
+elif abs(a) > abs(b) and abs(a) > abs(c):
+    # Płaszczyzna pionowa - rysujemy X jako funkcję Y i Z
+    yy, zz = np.meshgrid(np.linspace(lim[0][1], lim[1][1], grid_size),
+                         np.linspace(lim[0][2], lim[1][2], grid_size))
+    xx = (-b * yy - c * zz - d) / a
+elif abs(b) > abs(a) and abs(b) > abs(c):
+    # Inna płaszczyzna pionowa - rysujemy Y jako funkcję X i Z
+    xx, zz = np.meshgrid(np.linspace(lim[0][0], lim[1][0], grid_size),
+                         np.linspace(lim[0][2], lim[1][2], grid_size))
+    yy = (-a * xx - c * zz - d) / b
+
 ax.plot_surface(xx, yy, zz, color='blue', alpha=0.5)
 set_axes_equal(ax)
 ax.set_xlabel('X')
