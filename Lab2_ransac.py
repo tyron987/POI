@@ -13,7 +13,7 @@ def fit_plane(points):
     return a, b, c, d
 
 
-def refine_plane_least_squares(points):
+def refine_plane_SVD(points):
     """Służy do oszacowania dokładniejszego modelu dla inlierów z najlepszej grupy"""
     # Obliczanie środka punktów
     centroid = np.mean(points, axis=0)
@@ -65,7 +65,7 @@ def ransac_plane_fit(points, iterations=100, threshold=1.0):
 
     # Dalsze dopasowanie do modelu
     if len(best_inliers) > 0:
-        a, b, c, d = refine_plane_least_squares(best_inliers)
+        a, b, c, d = refine_plane_SVD(best_inliers)
         best_model = (a, b, c, d)
 
     return best_model, best_inliers
